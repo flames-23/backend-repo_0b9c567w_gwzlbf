@@ -1,48 +1,56 @@
 """
-Database Schemas
+Database Schemas for Library Management System
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
+Each Pydantic model represents a collection in MongoDB.
+Collection name is the lowercase class name.
 
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Collections:
+- Book
+- Member
+- Loan
+- Reservation (optional future)
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
+from datetime import datetime
 
-# Example schemas (replace with your own):
 
-class User(BaseModel):
+class Book(BaseModel):
     """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
+    Books collection schema
+    Collection name: "book"
+    """
+    title: str = Field(..., description="Book title")
+    author: str = Field(..., description="Primary author")
+    isbn: str = Field(..., description="ISBN identifier")
+    category: Optional[str] = Field(None, description="Category/Genre")
+    description: Optional[str] = Field(None, description="Short description")
+    total_copies: int = Field(1, ge=0, description="Total copies owned")
+    copies_available: int = Field(1, ge=0, description="Copies currently available")
+    tags: List[str] = Field(default_factory=list, description="Tags for search")
+
+
+class Member(BaseModel):
+    """
+    Members collection schema
+    Collection name: "member"
     """
     name: str = Field(..., description="Full name")
     email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    phone: Optional[str] = Field(None, description="Phone number")
+    address: Optional[str] = Field(None, description="Address")
+    is_active: bool = Field(True, description="Whether membership is active")
 
-class Product(BaseModel):
+
+class Loan(BaseModel):
     """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
+    Loans collection schema
+    Collection name: "loan"
     """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
-
-# Add your own schemas here:
-# --------------------------------------------------
-
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+    member_id: str = Field(..., description="Member ObjectId as string")
+    book_id: str = Field(..., description="Book ObjectId as string")
+    borrowed_at: datetime = Field(default_factory=datetime.utcnow)
+    due_at: datetime = Field(..., description="Due date/time (UTC)")
+    returned_at: Optional[datetime] = Field(None, description="Return date/time (UTC)")
+    status: str = Field("borrowed", description="borrowed | returned | overdue")
